@@ -27,7 +27,7 @@ public class QueryUtils {
     /**
      * Returns new URL object from the given string URL.
      */
-    public static URL createUrl(String stringUrl) {
+    private static URL createUrl(String stringUrl) {
         URL url;
         try {
             url = new URL(stringUrl);
@@ -41,7 +41,7 @@ public class QueryUtils {
     /**
      * Make an HTTP request to the given URL and return a String as the response.
      */
-    public static String makeHttpRequest(URL url) throws IOException {
+    private static String makeHttpRequest(URL url) throws IOException {
         String jsonResponse = "";
 
         // If the URL is null, then return early.
@@ -97,11 +97,33 @@ public class QueryUtils {
         return output.toString();
     }
 
+    public static ArrayList<EarthquakeData> fetchEarthquakeData(String urls) {
+
+        if (urls.isEmpty() || urls == null) {
+            return null;
+        }
+
+        // Create URL object
+        URL url = createUrl(urls);
+
+        // Perform HTTP request to the URL and receive a JSON response back
+        String jsonResponse = "";
+        try {
+            jsonResponse = makeHttpRequest(url);
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Problem making the HTTP request.", e);
+        }
+
+        ArrayList<EarthquakeData> fetchedData = extractEarthquakes(jsonResponse);
+
+        return fetchedData;
+    }
+
     /**
      * Return a list of {@link EarthquakeData} objects that has been built up from
      * parsing a JSON response.
      */
-    public static ArrayList<EarthquakeData> extractEarthquakes(String jsonResponse) {
+    private static ArrayList<EarthquakeData> extractEarthquakes(String jsonResponse) {
 
         // Create an empty ArrayList that we can start adding earthquakes to
         ArrayList<EarthquakeData> earthquakes = new ArrayList<>();
