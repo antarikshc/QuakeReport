@@ -16,19 +16,20 @@
 package com.example.android.quakereport;
 
 import android.app.LoaderManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
-import android.os.AsyncTask;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 
 public class EarthquakeActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ArrayList<EarthquakeData>> {
@@ -46,6 +47,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
     ListView earthquakeListView;
     private CustomAdapter customAdapter;
+    private TextView EmptyStateTextView;
+    ProgressBar loadSpin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,13 +57,13 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
         // Find a reference to the {@link ListView} in the layout
         earthquakeListView = findViewById(R.id.list);
+        loadSpin = findViewById(R.id.loadSpin);
 
         customAdapter = new CustomAdapter(getApplicationContext(), new ArrayList<EarthquakeData>());
 
         // Set the adapter on the {@link ListView}
         // so the list can be populated in the user interface
         earthquakeListView.setAdapter(customAdapter);
-
 
         earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -78,8 +81,17 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
             }
         });
 
-        LoaderManager loaderManager = getLoaderManager();
-        loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, this);
+        EmptyStateTextView = findViewById(R.id.emptyView);
+        earthquakeListView.setEmptyView(EmptyStateTextView);
+
+        boolean netConnection = checkNet();
+        if (netConnection) {
+            LoaderManager loaderManager = getLoaderManager();
+            loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, this);
+        } else {
+            EmptyStateTextView.setText(R.string.no_network);
+            loadSpin.setVisibility(View.GONE);
+        }
 
 
     }
@@ -92,19 +104,33 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
     @Override
     public void onLoadFinished(Loader<ArrayList<EarthquakeData>> loader, ArrayList<EarthquakeData> earthquakes) {
+        EmptyStateTextView.setText(R.string.no_earthquakes);
+
         // Clear the adapter of previous earthquake data
         customAdapter.clear();
 
 
         if (earthquakes != null && !earthquakes.isEmpty()) {
+            loadSpin.setVisibility(View.GONE);
             customAdapter.addAll(earthquakes);
         }
+
     }
 
     @Override
     public void onLoaderReset(Loader<ArrayList<EarthquakeData>> loader) {
         // Loader reset, so we can clear out our existing data.
         customAdapter.clear();
+    }
+
+
+
+    public boolean checkNet() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
     }
 
 }
